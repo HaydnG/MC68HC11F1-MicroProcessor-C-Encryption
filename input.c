@@ -56,12 +56,15 @@ void main(){
 
 }
 
-char *Mgets(char *is){
+char *Mgets(char *pointer, int Maxlength){
 	char *String;
-	int Input;
+	int Input, length;
+	length = 1;
 
-	String = is;
 	while(1){
+		if(length >= Maxlength){
+			break;
+		}
 		
 		if ((Input = Mgetchar()) == EOF){
 			return (0);
@@ -71,32 +74,28 @@ char *Mgets(char *is){
 			break;
 		}else{
 			*String++ = Input;
+			length++;
 		}	
 	}
 	
-	if (is == String){
-		return (0);
-	}
-		
-	printf("\nlength: %d \n",String - is);
+	
+	printf("\nlength: %d \n",length);
 		
 	*String = '\0';
-	return (is);
+	return (pointer);
 }
 
 
 unsigned char Mgetchar(){
 	unsigned char *SCDR, *SCSR,data,returnhit;
-	
-	
+		
 	SCDR = (unsigned char*) 0x2F;
 	SCSR = (unsigned char*) 0x2E;
 	
 	while(((*SCSR) & 0x20) == 0);
 	data = *SCDR;
 	Mputchar(data);
-	
-	
+		
 	return data;
 
 }
