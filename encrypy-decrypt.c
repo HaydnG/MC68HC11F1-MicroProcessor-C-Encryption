@@ -6,10 +6,9 @@
 
 void main(){
 
-	char table[6][6],string[37], tableEncrypted[6][6];
-	void OutputArray(char[6][6]);
+	char string[37];
+	void Cipher(char[37], int[6], int);
 	int keyID, *Key;
-
 
 	clearString(string); /*Pad the string out with spaces, to clear the memory, the string can then be inserted into a clear array*/
 	
@@ -22,10 +21,7 @@ void main(){
 		fflush(stdin);
 	}while(keyID < 1 || keyID > 720);
 	
-	printf("KeyID: %d\n", keyID);
-	
 	Key = Keys[keyID];
-	
 	
 	/*Get string of length 36, 37 including end of string char*/
 	printf("Enter a string(Max 36 chars): ");
@@ -33,28 +29,34 @@ void main(){
 		printf("\n\nThe string entered was: %s", string);
 	}
 	
-	/*Pass 1*/
-	encryption(string, table, Key);
+	/*Encrypt Pass 1*/
+	Cipher(string, Key, 1);
 
-	/*Pass 2*/
-	encryption(string, table, Key);
-
-
-	printf("\nEncrypted string: %s\n", string);
-
-
-}
-
-void encryption(char string[37], char table[6][6], int Key[6]){
-	char tableEncrypted[6][6];
-	void fillTable(char[37], char[6][6]),encryptTable(char [6][6], char [6][6], int [6]), encryptTableToString(char [6][6], char [37]);
+	/*Encrypt Pass 2*/
+	Cipher(string, Key, 1);
 	
-	fillTable(string, table); /* Fill table with inputted string*/
-	encryptTable(table, tableEncrypted, Key); /* Encrypt table with given key and output into specified table*/
-	encryptTableToString(tableEncrypted, string); /* Convert the table back to a string*/
+	printf("\nEncrypted string: %s\n", string);
+	
+	/*Decrypt Pass 1*/
+	Cipher(string, Key, 2);
+	
+	/*Decrypt Pass 2*/
+	Cipher(string, Key, 2);
+	
+	printf("\nDecrypted string: %s\n", string);
+
 }
 
-void fillTable(char string[37], char table[6][6]){
+void Cipher(char string[37], int Key[6], int mode){
+	char table[6][6], tableOutput[6][6];
+	void fillTable(char[37], char[6][6], int),applycipher(char [6][6], char [6][6], int [6]), TableToString(char [6][6], char [37],int);
+	
+	fillTable(string, table, mode); /* Fill table by columns with inputted string*/
+	applycipher(table, tableOutput, Key); 
+	TableToString(tableOutput, string, mode);
+}
+
+void fillTable(char string[37], char table[6][6],int mode){
 	int i,row, column;
 	row = 0;
 	column = 0;
@@ -69,12 +71,17 @@ void fillTable(char string[37], char table[6][6]){
 			string[i] = ' ';
 		}
 		
-		table[row][column] = string[i];
+		if(mode == 1){ /* Determines wether to sort the message into rows or columns depending on if its decrypting or encrpyting*/
+			table[row][column] = string[i];
+		}else{
+			table[column][row] = string[i];
+		}
+		
 		row++;		
 	}	
 }
 
-void encryptTable(char table[6][6], char encryptedTable[6][6], int Key[6]){
+void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6]){
 	int i,j;
 	
 	for(i = 0; i < 6; i++){			
@@ -84,19 +91,23 @@ void encryptTable(char table[6][6], char encryptedTable[6][6], int Key[6]){
 	}
 }
 
-void encryptTableToString(char table[6][6], char string[37]){
-	int row, letter, count;
+void TableToString(char table[6][6], char string[37], int mode){
+	int row, column, count;
 	count = 0;
 	for(row = 0;row< 6; row++){
-		for(letter = 0; letter < 6; letter++){
+		for(column = 0; column < 6; column++){
 					
-			string[count] = table[row][letter];						
+			if(mode == 1){ /*Read table column by column*/
+				string[count] = table[row][column];		
+			}else{	 /*Read table row by row*/
+				string[count] = table[column][row];		
+			}		
+							
 			count++;
 		}		
 	}
 	string[37] = '\0'; /*End string*/
 }
-
 
 void clearString(char string[37]){
 	int i;
@@ -106,20 +117,3 @@ void clearString(char string[37]){
 	}
 	string[37] = '\0';
 }
-
-
-
-void OutputArray(char table[6][6]){
-	int i, j;
-
-	for(i = 0; i < 6;i++){
-		for(j = 0; j < 6;j++){
-			printf("[%c]",table[j][i]);
-	
-		}
-		printf("\n");
-	
-	}
-	printf("\n\r\n\r");		
-}
-
