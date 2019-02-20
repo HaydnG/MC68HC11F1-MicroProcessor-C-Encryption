@@ -23,7 +23,7 @@ void main(){
 	}while(keyID < 1 || keyID > 719);
 	
 
-	SplitNum(Keys[keyID], Key); /*split the six digit key into a arra */
+	SplitNum(Keys[keyID], Key); /*split the six digit key into an array */
 	
 	/*Get string of length 36, 37 including end of string char*/
 	printf("Enter a string(Max 36 chars): ");
@@ -45,71 +45,6 @@ void main(){
 	
 	printf("\nDecrypted string: %s\n", string);
 	
-}
-
-void SplitNum(int Num, int * Arr){
-	
-	
-	Arr[0] = Num / 100000;
-	Num = Num % 100000;
-	
-	Arr[1] = Num / 10000;
-	Num = Num % 10000;
-	
-	Arr[2] = Num / 1000;
-	Num = Num % 1000;
-	
-	Arr[3] = Num / 100;
-	Num = Num % 100;
-	
-	Arr[4] = Num / 10;
-	Num = Num % 10;
-	
-	Arr[5] = Num;
-
-}
-
-void GenCodes(int *Keys){
-	int a, b, c, d, e, f, counter;
-	
-	counter = 0;
-	
-	for(a = 1; a <=6;a++){
-		for(b = 1; b <=6;b++){
-			for(c = 1; c <=6;c++){
-				for(d = 1; d <=6;d++){
-					for(e = 1; e <=6;e++){
-						for(f = 1; f <=6;f++){
-									
-							if((a != b) && (a != c) && (a != d) && (a != e) && (a != f)){									
-							
-								if((b != c) && (b != d) && (b != e) && (b != f)){										
-									
-									if((c != d) && (c != e) && (c != f)){	
-																		
-										if((d != e) && (d != f)){
-											
-											if((e != f)){
-		
-												Keys[counter] = 0;
-												Keys[counter] += a * 100000;
-												Keys[counter] += b * 10000;	
-												Keys[counter] += c * 1000;
-												Keys[counter] += d * 100;
-												Keys[counter] += e * 10;											
-												Keys[counter] += f;	
-												counter++;																										
-											}								
-										}							
-									}							
-								}																
-							}	
-						}	
-					}
-				}
-			}
-		}
-	}	
 }
 
 void Cipher(char string[37], int Key[6], int mode){
@@ -181,4 +116,54 @@ void clearString(char string[37]){
 		string[i] = ' ';
 	}
 	string[37] = '\0';
+}
+
+void SplitNum(int Num, int * Arr){
+	
+	Arr[0] = Num / 100000;
+	Num = Num % 100000;
+	
+	Arr[1] = Num / 10000;
+	Num = Num % 10000;
+	
+	Arr[2] = Num / 1000;
+	Num = Num % 1000;
+	
+	Arr[3] = Num / 100;
+	Num = Num % 100;
+	
+	Arr[4] = Num / 10;
+	Num = Num % 10;
+	
+	Arr[5] = Num;
+
+}
+
+void GenCodes(int *Keys){
+	int a, b, c, d, e, f, counter;	
+	counter = 0;
+	
+	for(a = 1; a <=6;a++){
+		for(b = 1; b <=6;b++){
+			for(c = 1; c <=6;c++){
+				for(d = 1; d <=6;d++){
+					for(e = 1; e <=6;e++){
+						for(f = 1; f <=6;f++){	
+														
+							if((a != b) && (a != c) && (a != d) && (a != e) && (a != f)){																
+								if((b != c) && (b != d) && (b != e) && (b != f)){																			
+									if((c != d) && (c != e) && (c != f)){																		
+										if((d != e) && (d != f)){										
+											if((e != f)){
+		
+												Keys[counter] = 0;
+												Keys[counter] += a * 100000;
+												Keys[counter] += b * 10000;	
+												Keys[counter] += c * 1000;
+												Keys[counter] += d * 100;
+												Keys[counter] += e * 10;											
+												Keys[counter] += f;	
+												counter++;																										
+							}}}}}				
+	}}}}}}	
 }

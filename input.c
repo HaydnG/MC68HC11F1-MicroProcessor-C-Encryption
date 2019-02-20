@@ -4,47 +4,45 @@
 unsigned char Mgetchar();
 int Mputchar(unsigned char);
 char *Mgets(char*);
+void clearString(), Cipher();
 
 void main(){
 
-	char StringAlloc[36],*String;
+	char String[37];
 	unsigned char *portA,*ddrA;
 	unsigned int j,last,option;
-	portA=(unsigned char *)0x00;	/*Cast values into pointers*/
-	ddrA=(unsigned char *)0x01;	
+	portA=(unsigned char *)0x00;	/*Port A Data register*/
+	ddrA=(unsigned char *)0x01;	  /*Port A Data Direction register*/
 	
+	*ddrA = 0x06; /* PortA Input=0/Output=1      [0][1 Decrypt LED][1 Encrypt LED][0] */
 	
-	*ddrA = 0x06;
-	
-	String = StringAlloc;
-	
+	clearString(String); /*Pad/Clear the memory*/
 	
 	while(1){
 		/*for(j=0;j<0xfff;j++);  /*Delay*/
 		
+		*portA = 0x0; /*Turn LEDs off*/
 		
+		option = *portA & 0x01;
 		
-		if((*portA & 0x01)==0){ /*Mode select*/
-			printf("\rEncryption Selected");
-			printf("\n\nEnter an Encrpytion key: ");
-			String = Mgets(String);
-			
-			if(String != 0){
-				printf("\nInputted string: %s",String);
-			}
-			
-			
-		}else if(*portA & 0x01){
-			printf("\rDecryption Selected");
-			printf("\n\nEnter a Decryption key: ");
-			String = Mgets(String);
-			
-			if(String != 0){
-				printf("Inputted string: %s",String);
-			}
-			
-			
+		switch(option){
+			case 0:
+				printf("\rEncryption Selected");
+				printf("\n\nEnter an Encrpytion key: ");
+				break;
+			case 1:
+				printf("\rDecryption Selected");
+				printf("\n\nEnter a Decryption key: ");
+				break;
 		}
+		
+		String = Mgets(String);
+		
+		if(String != 0){
+				printf("\nInputted string: %s",String);
+		}
+
+		*portA = (option+1) << 1; /*Turn on led depending on the value of option*/
 		
 		printf("\r\n\n");
 		printf("##########################################\n\n");
@@ -54,6 +52,20 @@ void main(){
 	
 	
 
+}
+
+void Cipher(){
+	for(j=0;j<0xffff;j++);
+
+}
+
+void clearString(char string[37]){
+	int i;
+	
+	for(i = 0;i<37;i++){
+		string[i] = ' ';
+	}
+	string[37] = '\0';
 }
 
 char *Mgets(char *pointer, int Maxlength){
