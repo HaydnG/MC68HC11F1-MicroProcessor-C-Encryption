@@ -1,68 +1,97 @@
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> 
 
-void ClearBuffer(),OutputArray(char[6][6]);
+unsigned char Mgetchar();
+int Mputchar(unsigned char);
+char *Mgets(char*, int);
+void OutputArray(char[6][6]);
 
 void main(){
 
 	char string[37];
+	unsigned char *portA,*ddrA;
+	int option, keyID, Key[6], Keys[720];
+	unsigned int j,i;
+	
 	void Cipher(char[37], int[6], int), GenCodes(int *), SplitNum(int, int*), clearString(char *);
-	int keyID, Key[6], Keys[720];
-	int j;
 
-	clearString(string); /*Pad the string out with spaces, to clear the memory, the string can then be inserted into a clear array*/
 	
+	portA=(unsigned char *)0x00;	/*Port A Data register*/
+	ddrA=(unsigned char *)0x01;	  /*Port A Data Direction register*/
 	
+	*ddrA = 0x06; /* PortA Input=0/Output=1      [0][1 Decrypt LED][1 Encrypt LED][0] */
+	
+		
 	GenCodes(Keys); /*Generate all cipher codes*/
 	
-	/*Get interger between 1-720(inclusive) for KeyID*/	
-	keyID = 0;
-	do{
-		printf("Enter a Key ID(1-719): ");
-		scanf("%d", &keyID);
-		ClearBuffer();
-	}while(keyID < 1 || keyID > 719);
-	
+	while(1){
+		
+		clearString(string); /*Pad the string out with spaces, to clear the memory, the string can then be inserted into a clear array*/
+		
+		/*Get interger between 1-720(inclusive) for KeyID*/	
+		
+		keyID = 0;
+		do{
+			printf("Enter a Key ID(1-719): ");
+			scanf("%d", &keyID);
+		}while(keyID < 1 || keyID > 719);
+		
+		
+		
+		SplitNum(Keys[keyID], Key); /*split the six digit key into an array */	/*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
+		
 
-	SplitNum(Keys[keyID], Key); /*split the six digit key into an array */ /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
+		printf("\n"); /*Debugging to print key*/
+		for(j = 0; j < 6; j ++){
+			printf("[%d]", Key[j]);
+		}
+		printf("\n\n");
+		
+		option = *portA & 0x01; /* Read switch value*/
+		
+		switch(option){
+			case 0:
+				printf("\rEncryption Selected");
+				printf("\n\nEnter an Encrpytion key: ");
+				break;
+			case 1:
+				printf("\rDecryption Selected");
+				printf("\n\nEnter a Decryption key: ");
+				break;
+		}
+		
+		if(Mgets(string,37) !=NULL){
+			printf("\n\nThe string entered was: %s", string);
+			
+			/*Encrypt Pass 1*/
+			Cipher(string, Key, option);
+			/*Encrypt Pass 2*/
+			Cipher(string, Key, option);
+			
+			printf("\nOutput string: %s\n", string);
+								
+			*portA = (option+1) << 1; /*Turn on led depending on the value of option*/
+			
+			for(j=0;j<0x7fff;j++);
+			for(j=0;j<0x7fff;j++);
+			
+			*portA = *portA & (0x1); /*Turn LEDs off*/
+		}
+		
+		
+		printf("\r\n\n");
+		printf("##########################################\n\n");
 
-
-	printf("\n");  /*Debugging to print key*/
-	for(j = 0; j < 6; j ++){
-		printf("[%d]", Key[j]);
 	}
-	printf("\n\n");
-	
-	
-	/*Get string of length 36, 37 including end of string char*/
-	printf("Enter a string(Max 36 chars): ");
-	if(fgets(string, 37, stdin) !=NULL){
-		printf("\n\nThe string entered was: %s", string);
-	}
-	
-	/*Encrypt Pass 1*/
-	Cipher(string, Key, 0);
-	/*Encrypt Pass 2*/
-	Cipher(string, Key, 0);
-	
-	printf("\nEncrypted string: %s\n", string);
-	
-	/*Decrypt Pass 1*/
-	Cipher(string, Key, 1);	
-	/*Decrypt Pass 2*/
-	Cipher(string, Key, 1);
-	
-	printf("\nDecrypted string: %s\n", string);
-	
+
 }
 
 void Cipher(char string[37], int Key[6], int mode){
 	char table[6][6], tableOutput[6][6];
 	void fillTable(char[37], char[6][6], int),applycipher(char [6][6], char [6][6], int [6]), TableToString(char [6][6], char [37],int);
+	int j;
 	
-	fillTable(string, table, mode); /* Fill table by columns with inputted string*/	
+	fillTable(string, table, mode); /* Fill table by columns with inputted string*/
 	applycipher(table, tableOutput, Key); 
 	TableToString(tableOutput, string, mode);
 }
@@ -179,8 +208,60 @@ void GenCodes(int *Keys){
 	}}}}}}	
 }
 
-void ClearBuffer(){ 
-	while ((getchar()) != '\n');
+char *Mgets(char *pointer, int Maxlength){
+	char *String;
+	int Input, length;
+	length = 0;
+	String = pointer;
+
+	while(1){
+		if(length >= Maxlength){
+			break;
+		}
+		
+		if ((Input = Mgetchar()) == EOF){
+			return (NULL);
+		}
+			
+		if (Input == '\n' || Input == '\r'){
+			break;
+		}else{
+			*String++ = Input;
+			length++;
+		}	
+	}
+	
+	if (pointer == String)
+		return (NULL);
+	
+	printf("\nlength: %d \n",length);
+		
+	*String = '\0';
+	return (pointer);
+}
+
+
+unsigned char Mgetchar(){
+	unsigned char *SCDR, *SCSR,data,returnhit;
+		
+	SCDR = (unsigned char*) 0x2F;
+	SCSR = (unsigned char*) 0x2E;
+	
+	while(((*SCSR) & 0x20) == 0);
+	data = *SCDR;
+	Mputchar(data);
+		
+	return data;
+
+}
+
+int Mputchar(unsigned char input){
+	unsigned char *SCDR,*SCSR;
+	SCDR = (unsigned char*)0x2F;
+	SCSR = (unsigned char*)0x2E;
+	while(((*SCSR) & 0x80) == 0);
+	*SCDR = input;
+	return 1;	
 }
 
 void OutputArray(char table[6][6]){
@@ -196,3 +277,4 @@ void OutputArray(char table[6][6]){
 	}
 	printf("\n\r\n\r");		
 }
+

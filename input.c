@@ -3,7 +3,7 @@
 
 unsigned char Mgetchar();
 int Mputchar(unsigned char);
-char *Mgets(char*);
+char *Mgets(char*, int);
 void clearString(), Cipher();
 
 void main(){
@@ -36,7 +36,7 @@ void main(){
 				break;
 		}
 		
-		String = Mgets(String);
+		String = Mgets(String,37);
 		
 		if(String != 0){
 				printf("\nInputted string: %s",String);
@@ -71,7 +71,7 @@ void clearString(char string[37]){
 char *Mgets(char *pointer, int Maxlength){
 	char *String;
 	int Input, length;
-	length = 1;
+	length = 0;
 
 	while(1){
 		if(length >= Maxlength){
