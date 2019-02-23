@@ -179,7 +179,7 @@ void SplitNum(int Num, int * Arr){
 
 }
 
-void GenCodes(int *Keys){
+void GenCodes(long int *Keys){
 	int a, b, c, d, e, f, counter;	
 	counter = 0;
 	
