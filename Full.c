@@ -1,46 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-unsigned char Mgetchar();
-int Mputchar(unsigned char);
+
+int Mputchar(unsigned char),Mgetchar();
 char *Mgets(char*, int);
-void OutputArray(char[6][6]);
+void Cipher(char[37], int[6], int);
+int *SplitNum(long int *, int *), *GetKey(long int *, int *);
+long int * GenCodes(long int *);
+char *clearString(char *);
 
 void main(){
 
 	char string[37];
 	unsigned char *portA,*ddrA;
-	int option, keyID, Key[6], Keys[720];
-	unsigned int j,i;
-	
-	void Cipher(char[37], int[6], int), GenCodes(int *), SplitNum(int, int*), clearString(char *);
-
+	long int  Keys[720];
+	int option, Key[6];
+	unsigned int j;
 	
 	portA=(unsigned char *)0x00;	/*Port A Data register*/
-	ddrA=(unsigned char *)0x01;	  /*Port A Data Direction register*/
-	
+	ddrA=(unsigned char *)0x01;	  /*Port A Data Direction register*/	
 	*ddrA = 0x06; /* PortA Input=0/Output=1      [0][1 Decrypt LED][1 Encrypt LED][0] */
-	
 		
 	GenCodes(Keys); /*Generate all cipher codes*/
 	
 	while(1){
 		
+		
 		clearString(string); /*Pad the string out with spaces, to clear the memory, the string can then be inserted into a clear array*/
 		
-		/*Get interger between 1-720(inclusive) for KeyID*/	
+		/*Get interger between 1-720(inclusive) for KeyID*/
 		
-		keyID = 0;
-		do{
-			printf("Enter a Key ID(1-719): ");
-			scanf("%d", &keyID);
-		}while(keyID < 1 || keyID > 719);
-		
-		
-		
-		SplitNum(Keys[keyID], Key); /*split the six digit key into an array */	/*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
-		
+		GetKey(Keys,Key); /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
 
+		
 		printf("\n"); /*Debugging to print key*/
 		for(j = 0; j < 6; j ++){
 			printf("[%d]", Key[j]);
@@ -149,37 +141,56 @@ void TableToString(char table[6][6], char string[37], int mode){
 	string[37] = '\0'; /*End string*/
 }
 
-void clearString(char string[37]){
+char * clearString(char string[37]){
 	int i;
 	
 	for(i = 0;i<37;i++){
 		string[i] = ' ';
 	}
 	string[37] = '\0';
+	
+	return string;
 }
 
-void SplitNum(int Num, int * Arr){
+int * GetKey(long int *Keys, int * Key){
+	int keyID;
+
+
+	keyID = 0; /*Clear key*/		
+	do{
+		printf("Enter a Key ID(1-719): ");
+		scanf("%d", &keyID);
+	}while(keyID < 1 || keyID > 719);
+			
+	SplitNum(Keys[keyID], Key); /*split the six digit key into an array */
+
+	return Key;
+
+}
+
+int * SplitNum(long int Num, int * Key){
 	
-	Arr[0] = Num / 100000;
+	Key[0] = Num / 100000;
 	Num = Num % 100000;
 	
-	Arr[1] = Num / 10000;
+	Key[1] = Num / 10000;
 	Num = Num % 10000;
 	
-	Arr[2] = Num / 1000;
+	Key[2] = Num / 1000;
 	Num = Num % 1000;
 	
-	Arr[3] = Num / 100;
+	Key[3] = Num / 100;
 	Num = Num % 100;
 	
-	Arr[4] = Num / 10;
+	Key[4] = Num / 10;
 	Num = Num % 10;
 	
-	Arr[5] = Num;
-
+	Key[5] = Num;
+	
+	return Key;
 }
 
-void GenCodes(long int *Keys){
+long int * GenCodes(long int *Keys){
 	int a, b, c, d, e, f, counter;	
 	counter = 0;
 	
@@ -206,6 +217,8 @@ void GenCodes(long int *Keys){
 												counter++;																										
 							}}}}}				
 	}}}}}}	
+	
+	return Keys;
 }
 
 char *Mgets(char *pointer, int Maxlength){
@@ -241,40 +254,19 @@ char *Mgets(char *pointer, int Maxlength){
 }
 
 
-unsigned char Mgetchar(){
-	unsigned char *SCDR, *SCSR,data,returnhit;
+int Mgetchar(){
+	unsigned char *SCDR, *SCSR,data;
 		
 	SCDR = (unsigned char*) 0x2F;
 	SCSR = (unsigned char*) 0x2E;
 	
 	while(((*SCSR) & 0x20) == 0);
 	data = *SCDR;
-	Mputchar(data);
+	
+	if (data == '\r')
+		data = '\n';
 		
-	return data;
+	return (putchar(data));
 
-}
-
-int Mputchar(unsigned char input){
-	unsigned char *SCDR,*SCSR;
-	SCDR = (unsigned char*)0x2F;
-	SCSR = (unsigned char*)0x2E;
-	while(((*SCSR) & 0x80) == 0);
-	*SCDR = input;
-	return 1;	
-}
-
-void OutputArray(char table[6][6]){
-	int i, j;
-
-	for(i = 0; i < 6;i++){
-		for(j = 0; j < 6;j++){
-			printf("[%c]",table[j][i]);
-	
-		}
-		printf("\n");
-	
-	}
-	printf("\n\r\n\r");		
 }
 
