@@ -1,34 +1,50 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+char *Mgets(char*, int, int), *clearString(char *);
+void Cipher(char[37], int[6], int),initialisation();
+int *SplitNum(long int *, int *), *GetKey(long int *, int *), int Msleep(int), Mputchar(unsigned char),Mgetchar(), tick, leaptick;
+long int * GenCodes(long int *), secs;
 
-int Mputchar(unsigned char),Mgetchar();
-char *Mgets(char*, int);
-void Cipher(char[37], int[6], int);
-int *SplitNum(long int *, int *), *GetKey(long int *, int *);
-long int * GenCodes(long int *);
-char *clearString(char *);
+unsigned char *portA,*ddrA,*pactl, *tmsk2,*tflg2;
 
-void main(){
-
-	char string[37];
-	unsigned char *portA,*ddrA;
-	long int  Keys[720];
-	int option, Key[6];
-	unsigned int j;
-	
+void initialisation(){
 	portA=(unsigned char *)0x00;	/*Port A Data register*/
 	ddrA=(unsigned char *)0x01;	  /*Port A Data Direction register*/	
+	tmsk2 = (unsigned char*)0x24;
+	pactl = (unsigned char*)0x26;
+	tflg2 = (unsigned char*)0x25;
+	
+	leaptick = 0;
+	secs = 0;
+	tick = 0;
+	*pactl = 0x03;   /*Set prescaler to maximum*/
+	*tmsk2 = 0x40;   /*Enable RTI interrupt*/
 	*ddrA = 0x06; /* PortA Input=0/Output=1      [0][1 Decrypt LED][1 Encrypt LED][0] */
 		
 	GenCodes(Keys); /*Generate all cipher codes*/
+}
+
+void main()
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: clearString(), GetKey(), Mgets(), Cipher(), Msleep(), printf()
+Purpose: Determine encryption/decryption, Read key ID, Read String, Apply Modified Double Columnar Transposition Cipher Algorithm, Wait
+Version: 1.0
+*/
+{
+	char string[37];	
+	long int  Keys[720];
+	int option, Key[6];
+	
+	unsigned int j;
+	
+	initialisation(); /*Set Data/Pointers*/
 	
 	while(1){
-		
-		
+			
 		clearString(string); /*Pad the string out with spaces, to clear the memory, the string can then be inserted into a clear array*/
-		
-		/*Get interger between 1-720(inclusive) for KeyID*/
 		
 		GetKey(Keys,Key); /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
 
@@ -52,7 +68,7 @@ void main(){
 				break;
 		}
 		
-		if(Mgets(string,37) !=NULL){
+		if(Mgets(string,36, 10) !=NULL){
 			printf("\n\nThe string entered was: %s", string);
 			
 			/*Encrypt Pass 1*/
@@ -64,21 +80,25 @@ void main(){
 								
 			*portA = (option+1) << 1; /*Turn on led depending on the value of option*/
 			
-			for(j=0;j<0x7fff;j++);
-			for(j=0;j<0x7fff;j++);
+			Msleep(5); /*Sleep 5 seconds*/
 			
 			*portA = *portA & (0x1); /*Turn LEDs off*/
-		}
-		
+		}		
 		
 		printf("\r\n\n");
 		printf("##########################################\n\n");
-
 	}
-
 }
 
-void Cipher(char string[37], int Key[6], int mode){
+void Cipher(char string[37], int Key[6], int mode)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: filltable(), applycipher(), TableToString()
+Purpose: A collection of the functins that carry out the encryption/decryption organised with the correct data inputs and called in the correct order.
+Version: 1.0
+*/
+{
 	char table[6][6], tableOutput[6][6];
 	void fillTable(char[37], char[6][6], int),applycipher(char [6][6], char [6][6], int [6]), TableToString(char [6][6], char [37],int);
 	int j;
@@ -88,7 +108,16 @@ void Cipher(char string[37], int Key[6], int mode){
 	TableToString(tableOutput, string, mode);
 }
 
-void fillTable(char string[37], char table[6][6],int mode){
+void fillTable(char string[37], char table[6][6],int mode)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Converts the string specified into a table.
+			The mode determines wether to sort the message into rows or columns depending on if its decrypting or encrpyting
+Version: 1.0
+*/
+{
 	int i,row, column;
 	row = 0;
 	column = 0;
@@ -103,7 +132,7 @@ void fillTable(char string[37], char table[6][6],int mode){
 			string[i] = ' ';
 		}
 		
-		if(mode == 0){ /* Determines wether to sort the message into rows or columns depending on if its decrypting or encrpyting*/
+		if(mode == 0){ /* Mode determines how to store data*/
 			table[row][column] = string[i];
 		}else{
 			table[column][row] = string[i];
@@ -113,7 +142,15 @@ void fillTable(char string[37], char table[6][6],int mode){
 	}	
 }
 
-void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6]){
+void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6])
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Moves the rows into another array in the order of the key specified
+Version: 1.0
+*/
+{
 	int i,j;
 	
 	for(i = 0; i < 6; i++){			
@@ -123,7 +160,16 @@ void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6]){
 	}
 }
 
-void TableToString(char table[6][6], char string[37], int mode){
+void TableToString(char table[6][6], char string[37], int mode)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Converts the Cipher table back to a string. 
+		The mode determines to read column by column or row by row, depending on if its decrypting or encrypting
+Version: 1.0
+*/
+{
 	int row, column, count;
 	count = 0;
 	for(row = 0;row< 6; row++){
@@ -141,7 +187,15 @@ void TableToString(char table[6][6], char string[37], int mode){
 	string[37] = '\0'; /*End string*/
 }
 
-char * clearString(char string[37]){
+char * clearString(char string[37])
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Pre-pads out the string to remove unwanted bits and to set to spaces.
+Version: 1.0
+*/
+{
 	int i;
 	
 	for(i = 0;i<37;i++){
@@ -152,7 +206,16 @@ char * clearString(char string[37]){
 	return string;
 }
 
-int * GetKey(long int *Keys, int * Key){
+
+int * GetKey(long int *Keys, int * Key)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: printf(), scanf(), SplitNum()
+Purpose: Gets a key id from 1-719 and looks up the key in the generated list
+Version: 1.0
+*/
+{
 	int keyID;
 
 
@@ -168,7 +231,15 @@ int * GetKey(long int *Keys, int * Key){
 
 }
 
-int * SplitNum(long int Num, int * Key){
+int * SplitNum(long int Num, int * Key)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Splits the long int key into individual ints stored inside an array for ease of use later in the algorithm
+Version: 1.0
+*/
+{
 	
 	Key[0] = Num / 100000;
 	Num = Num % 100000;
@@ -190,7 +261,15 @@ int * SplitNum(long int Num, int * Key){
 	return Key;
 }
 
-long int * GenCodes(long int *Keys){
+long int * GenCodes(long int *Keys)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Generates list of keys for the modified double columnar transposition cipher algorithm to use.
+Version: 1.0
+*/
+{
 	int a, b, c, d, e, f, counter;	
 	counter = 0;
 	
@@ -221,14 +300,23 @@ long int * GenCodes(long int *Keys){
 	return Keys;
 }
 
-char *Mgets(char *pointer, int Maxlength){
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: Mgetchar()
+Purpose: Custom gets function, only captures string for the specified time limit and length.
+Version: 1.0
+*/
+char *Mgets(char *pointer, int Maxlength, int timelimit){
 	char *String;
-	int Input, length;
+	int Input, length, timestamp;
 	length = 0;
 	String = pointer;
+	
+	timestamp = secs; /*Get time when function starts*/
 
-	while(1){
-		if(length >= Maxlength){
+	while(secs - timestamp < timelimit){
+		if(length >= (Maxlength+1)){ /*Add 1 to make room for end of string identifier*/
 			break;
 		}
 		
@@ -246,13 +334,10 @@ char *Mgets(char *pointer, int Maxlength){
 	
 	if (pointer == String)
 		return (NULL);
-	
-	printf("\nlength: %d \n",length);
 		
 	*String = '\0';
 	return (pointer);
 }
-
 
 int Mgetchar(){
 	unsigned char *SCDR, *SCSR,data;
@@ -268,5 +353,48 @@ int Mgetchar(){
 		
 	return (putchar(data));
 
+}
+
+int Msleep(int duration)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Wait a specified time
+Version: 1.0
+*/
+{
+	timestamp = 0;
+	
+	timestamp = secs;
+	while(secs-timestamp < duration); 
+	
+	return duration;
+}
+
+@interrupt void timer(void)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: None
+Purpose: Keep track of time from when the program starts.
+Version: 1.0
+*/
+{
+	tick++;
+	if(leaptick = 2){ /*Added leap tick which allows an extra tick every 2 seconds						
+						Thiss increases accuracy and makes it tick closer to a second*/
+		leaptick = 0;
+		tick--;
+	}
+	
+	if (tick == 30)
+	{
+		tick = 0;
+		secs++;
+		leaptick++;
+	}
+	
+	*tflg2 = 0x40;                      /*Reset RTI flag*/
 }
 
