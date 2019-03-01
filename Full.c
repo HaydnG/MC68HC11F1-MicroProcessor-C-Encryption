@@ -3,7 +3,7 @@
 
 char *Mgets(char*, int, int), *clearString(char *);
 void Cipher(char[37], int[6], int),initialisation();
-int *SplitNum(long int *, int *), *GetKey(long int *, int *), int Msleep(int), Mputchar(unsigned char),Mgetchar(), tick, leaptick;
+int *SplitNum(long int, int *), *GetKey(long int *, int *), Msleep(long int), Mputchar(unsigned char),Mgetchar(long int, int), tick, leaptick;
 long int * GenCodes(long int *), secs;
 
 unsigned char *portA,*ddrA,*pactl, *tmsk2,*tflg2;
@@ -22,7 +22,7 @@ void initialisation(){
 	*tmsk2 = 0x40;   /*Enable RTI interrupt*/
 	*ddrA = 0x06; /* PortA Input=0/Output=1      [0][1 Decrypt LED][1 Encrypt LED][0] */
 		
-	GenCodes(Keys); /*Generate all cipher codes*/
+	
 }
 
 void main()
@@ -41,6 +41,7 @@ Version: 1.0
 	unsigned int j;
 	
 	initialisation(); /*Set Data/Pointers*/
+	GenCodes(Keys); /*Generate all cipher codes*/
 	
 	while(1){
 			
@@ -48,13 +49,6 @@ Version: 1.0
 		
 		GetKey(Keys,Key); /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
 
-		
-		printf("\n"); /*Debugging to print key*/
-		for(j = 0; j < 6; j ++){
-			printf("[%d]", Key[j]);
-		}
-		printf("\n\n");
-		
 		option = *portA & 0x01; /* Read switch value*/
 		
 		switch(option){
@@ -80,10 +74,12 @@ Version: 1.0
 								
 			*portA = (option+1) << 1; /*Turn on led depending on the value of option*/
 			
-			Msleep(5); /*Sleep 5 seconds*/
+			Msleep(10); /*Sleep 5 seconds*/
 			
 			*portA = *portA & (0x1); /*Turn LEDs off*/
-		}		
+		}else{
+			printf("\n10 Second timeout - Restarting");
+		}	
 		
 		printf("\r\n\n");
 		printf("##########################################\n\n");
@@ -221,7 +217,7 @@ Version: 1.0
 
 	keyID = 0; /*Clear key*/		
 	do{
-		printf("Enter a Key ID(1-719): ");
+		printf("\nEnter a Key ID(1-719): ");
 		scanf("%d", &keyID);
 	}while(keyID < 1 || keyID > 719);
 			
@@ -287,12 +283,12 @@ Version: 1.0
 											if((e != f)){
 		
 												Keys[counter] = 0;
-												Keys[counter] += a * 100000;
-												Keys[counter] += b * 10000;	
-												Keys[counter] += c * 1000;
-												Keys[counter] += d * 100;
-												Keys[counter] += e * 10;											
-												Keys[counter] += f;	
+												Keys[counter] += (long int)a * 100000;
+												Keys[counter] += (long int)b * 10000;	
+												Keys[counter] += (long int)c * 1000;
+												Keys[counter] += (long int)d * 100;
+												Keys[counter] += (long int)e * 10;										
+												Keys[counter] += (long int)f;	
 												counter++;																										
 							}}}}}				
 	}}}}}}	
@@ -300,36 +296,49 @@ Version: 1.0
 	return Keys;
 }
 
+char *Mgets(char *pointer, int Maxlength, int timelimit)
 /* Author Haydn Gynn
 Company: Staffordshire University
 Date: 27/02/2019
 Functions used: Mgetchar()
-Purpose: Custom gets function, only captures string for the specified time limit and length.
+Purpose: Custom gets function, only captures string for the specified time limit and length. 
+		When ever a user enters a new character the timestamp is updated. if the user doesnt enter a key and the timelimit is reached null is returned
+		Enables backspace to work.
 Version: 1.0
 */
-char *Mgets(char *pointer, int Maxlength, int timelimit){
+{
 	char *String;
-	int Input, length, timestamp;
+	int Input, length;
+	long int timestamp;
 	length = 0;
 	String = pointer;
 	
 	timestamp = secs; /*Get time when function starts*/
 
-	while(secs - timestamp < timelimit){
+	while(1){
 		if(length >= (Maxlength+1)){ /*Add 1 to make room for end of string identifier*/
 			break;
 		}
 		
-		if ((Input = Mgetchar()) == EOF){
+		if ((Input = Mgetchar(timestamp, timelimit)) == EOF){
+			return (NULL);
+		}
+		if(Input == -1){
 			return (NULL);
 		}
 			
 		if (Input == '\n' || Input == '\r'){
 			break;
+		}else if(Input == '\b'){ /*Allow backspace to work*/
+			putchar(' ');
+			putchar('\b');
+			*String--;
+			length--;
 		}else{
 			*String++ = Input;
-			length++;
-		}	
+			length++;			
+		}
+		timestamp = secs; /*Reset time stamp*/
 	}
 	
 	if (pointer == String)
@@ -339,13 +348,29 @@ char *Mgets(char *pointer, int Maxlength, int timelimit){
 	return (pointer);
 }
 
-int Mgetchar(){
+int Mgetchar(long int timestamp, int timelimit)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 27/02/2019
+Functions used: putchar()
+Purpose: Custom Mgetchar function.
+		Waits for input buffer or for the time to run out. If the time runs out and a character is not entered -1 is returned.
+		If a character is returned the data is read in and the char gets returned.
+		
+Version: 1.0
+*/
+{
 	unsigned char *SCDR, *SCSR,data;
 		
 	SCDR = (unsigned char*) 0x2F;
 	SCSR = (unsigned char*) 0x2E;
 	
-	while(((*SCSR) & 0x20) == 0);
+	while((((*SCSR) & 0x20) == 0) && ((secs-timestamp) <= timelimit));
+	
+	if((((*SCSR) & 0x20) == 0) && ((secs-timestamp) >= timelimit)){
+		return -1; /*Times up*/
+	}
+	
 	data = *SCDR;
 	
 	if (data == '\r')
@@ -355,7 +380,7 @@ int Mgetchar(){
 
 }
 
-int Msleep(int duration)
+int Msleep(long int duration)
 /* Author Haydn Gynn
 Company: Staffordshire University
 Date: 27/02/2019
@@ -364,10 +389,23 @@ Purpose: Wait a specified time
 Version: 1.0
 */
 {
+	long int timestamp;
+	int tock;
 	timestamp = 0;
 	
+	tock = 0;
 	timestamp = secs;
-	while(secs-timestamp < duration); 
+	printf("\n");
+	while(secs-timestamp < duration){
+		
+		if(tick == 0 && tock == 0){
+			printf("\rResetting: %ld",duration - (secs-timestamp));
+			tock = 1;
+		}
+		if(tick == 1 && tock == 1){
+			tock = 0;
+		}
+	}; 
 	
 	return duration;
 }
@@ -381,8 +419,9 @@ Purpose: Keep track of time from when the program starts.
 Version: 1.0
 */
 {
+	
 	tick++;
-	if(leaptick = 2){ /*Added leap tick which allows an extra tick every 2 seconds						
+	if(leaptick == 2){ /*Added leap tick which allows an extra tick every 2 seconds						
 						Thiss increases accuracy and makes it tick closer to a second*/
 		leaptick = 0;
 		tick--;
