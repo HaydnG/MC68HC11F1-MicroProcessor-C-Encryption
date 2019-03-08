@@ -96,11 +96,11 @@ Version: 1.0
 */
 {
 	char table[6][6], tableOutput[6][6];
-	void fillTable(char[37], char[6][6], int),applycipher(char [6][6], char [6][6], int [6]), TableToString(char [6][6], char [37],int);
+	void fillTable(char[37], char[6][6], int),applycipher(char [6][6], char [6][6], int [6], int), TableToString(char [6][6], char [37],int);
 	int j;
 	
 	fillTable(string, table, mode); /* Fill table by columns with inputted string*/
-	applycipher(table, tableOutput, Key); 
+	applycipher(table, tableOutput, Key, mode); 
 	TableToString(tableOutput, string, mode);
 }
 
@@ -138,7 +138,7 @@ Version: 1.0
 	}	
 }
 
-void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6])
+void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6],  int mode)
 /* Author Haydn Gynn
 Company: Staffordshire University
 Date: 27/02/2019
@@ -148,10 +148,15 @@ Version: 1.0
 */
 {
 	int i,j;
+	char temp;
 	
 	for(i = 0; i < 6; i++){			
 		for(j = 0; j < 6; j++){
-			encryptedTable[i][j] = table[Key[i]-1][j];	/* move the contents of the table into the encrypted table, in the order of the key*/
+			if(mode == 0){
+				encryptedTable[i][j] = table[Key[i]-1][j];	/* move the contents of the table into the encrypted table, in the order of the key*/
+			}else{
+				encryptedTable[Key[i]-1][j] = table[i][j];
+			}
 		}		
 	}
 }
