@@ -3,7 +3,7 @@
 
 char *Mgets(char*, int, int), *clearString(char *);
 void Cipher(char[37], int[6], int),initialisation();
-int *SplitNum(long int, int *), *GetKey(long int *, int *), Msleep(long int), Mputchar(unsigned char),Mgetchar(long int, int), tick, leaptick;
+int *SplitNum(long int, int *), GetKey(long int *), Msleep(long int), Mputchar(unsigned char),Mgetchar(long int, int), tick, leaptick;
 long int * GenCodes(long int *), secs;
 
 unsigned char *portA,*ddrA,*pactl, *tmsk2,*tflg2;
@@ -36,7 +36,9 @@ Version: 1.0
 {
 	char string[37], TrimmedString[37];	
 	long int  Keys[720];
-	int option, Key[6], length;
+	int option, Key[6], length, KeyNum;
+	
+	/*KeyNum = 123456 */ /*Override Key*/
 	
 	unsigned int j;
 	
@@ -47,7 +49,9 @@ Version: 1.0
 			
 		clearString(string); /*Pad the string out with spaces, to clear the memory, the string can then be inserted into a clear array*/
 		
-		GetKey(Keys,Key); /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
+		KeyNum = GetKey(Keys); /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEYNUM INT*/
+       
+	    SplitNum(KeyNum, Key); /*split the six digit key into an array */
 
 		option = *portA & 0x01; /* Read switch value*/
 		
@@ -210,7 +214,7 @@ Version: 1.0
 }
 
 
-int * GetKey(long int *Keys, int * Key)
+int GetKey(long int *Keys)
 /* Author Haydn Gynn
 Company: Staffordshire University
 Date: 27/02/2019
@@ -227,10 +231,8 @@ Version: 1.0
 		printf("\nEnter a Key ID(1-719): ");
 		scanf("%d", &keyID);
 	}while(keyID < 1 || keyID > 719);
-			
-	SplitNum(Keys[keyID], Key); /*split the six digit key into an array */
 
-	return Key;
+	return Keys[keyID];
 
 }
 
