@@ -34,9 +34,9 @@ Purpose: Determine encryption/decryption, Read key ID, Read String, Apply Modifi
 Version: 1.0
 */
 {
-	char string[37];	
+	char string[37], TrimmedString[37];	
 	long int  Keys[720];
-	int option, Key[6];
+	int option, Key[6], length;
 	
 	unsigned int j;
 	
@@ -70,7 +70,9 @@ Version: 1.0
 			/*Encrypt Pass 2*/
 			Cipher(string, Key, option);
 			
-			printf("\nOutput string: %s\n", string);
+			length = trim(string,TrimmedString);
+			
+			printf("\nOutput string: '%s' %d Chars\n", TrimmedString, length);
 								
 			*portA = (option+1) << 1; /*Turn on led depending on the value of option*/
 			
@@ -260,6 +262,41 @@ Version: 1.0
 	Key[5] = Num;
 	
 	return Key;
+}
+
+int trim(char *String, char * TrimmedString)
+/* Author Haydn Gynn
+Company: Staffordshire University
+Date: 13/03/2019
+Functions used: None
+Purpose: Trims the string of leading and trailing spaces and returns the length
+Version: 1.0
+*/{
+	char * Start, * Finish, *temp;
+	int length;
+	temp = String;
+	Start = NULL;
+	Finish = NULL;
+
+	while(*temp != '\0'){
+		
+		if(*temp != ' ' && Start == NULL){
+			Start = temp;			
+		}
+		if(*temp != ' ' && *(temp+1) == ' '){
+			Finish = temp + 1;
+		}
+		temp++;
+		
+	}
+	length = Finish - Start;
+	while(Start != Finish){ 
+		*TrimmedString = (char)*(Start++);	
+		TrimmedString++;	
+	}
+	*TrimmedString = '\0';
+	
+	return length;
 }
 
 long int * GenCodes(long int *Keys)
