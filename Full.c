@@ -3,7 +3,7 @@
 
 char *Mgets(char*, int, int), *clearString(char *);
 void Cipher(char[37], int[6], int),initialisation();
-int *SplitNum(long int, int *), GetKey(long int *), Msleep(long int), Mputchar(unsigned char),Mgetchar(long int, int), tick, leaptick;
+int *SplitNum(long int, int *), *GetKey(long int *, int *), Msleep(long int), Mputchar(unsigned char),Mgetchar(long int, int), tick, leaptick;
 long int * GenCodes(long int *), secs;
 
 unsigned char *portA,*ddrA,*pactl, *tmsk2,*tflg2;
@@ -36,9 +36,8 @@ Version: 1.0
 {
 	char string[37], TrimmedString[37];	
 	long int  Keys[720];
-	int option, Key[6], length, KeyNum;
-	
-	/*KeyNum = 123456 */ /*Override Key*/
+	int option, trim(char *, char *),length, Key[6];
+	/*int Key = {6,5,4,3,2,1};*/
 	
 	unsigned int j;
 	
@@ -49,9 +48,7 @@ Version: 1.0
 			
 		clearString(string); /*Pad the string out with spaces, to clear the memory, the string can then be inserted into a clear array*/
 		
-		KeyNum = GetKey(Keys); /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEYNUM INT*/
-       
-	    SplitNum(KeyNum, Key); /*split the six digit key into an array */
+		GetKey(Keys,Key); /*##COMMENT OUT TO OVERRIDE KEY, THEN SET KEY ARRAY*/
 
 		option = *portA & 0x01; /* Read switch value*/
 		
@@ -76,8 +73,8 @@ Version: 1.0
 			
 			length = trim(string,TrimmedString);
 			
-			printf("\nOutput string: '%s' %d Chars\n", TrimmedString, length);
-								
+			printf("\n\nOutput string: '%s' %d Chars\n", TrimmedString, length);
+			
 			*portA = (option+1) << 1; /*Turn on led depending on the value of option*/
 			
 			Msleep(10); /*Sleep 5 seconds*/
@@ -85,9 +82,10 @@ Version: 1.0
 			*portA = *portA & (0x1); /*Turn LEDs off*/
 		}else{
 			printf("\n10 Second timeout - Restarting");
+			Msleep(3); /*Sleep 5 seconds*/
 		}	
 		
-		printf("\r\n\n");
+		printf("\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 		printf("##########################################\n\n");
 	}
 }
@@ -144,7 +142,7 @@ Version: 1.0
 	}	
 }
 
-void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6],  int mode)
+void applycipher(char table[6][6], char encryptedTable[6][6], int Key[6], int mode)
 /* Author Haydn Gynn
 Company: Staffordshire University
 Date: 27/02/2019
@@ -154,7 +152,6 @@ Version: 1.0
 */
 {
 	int i,j;
-	char temp;
 	
 	for(i = 0; i < 6; i++){			
 		for(j = 0; j < 6; j++){
@@ -214,7 +211,7 @@ Version: 1.0
 }
 
 
-int GetKey(long int *Keys)
+int * GetKey(long int *Keys, int * Key)
 /* Author Haydn Gynn
 Company: Staffordshire University
 Date: 27/02/2019
@@ -231,10 +228,14 @@ Version: 1.0
 		printf("\nEnter a Key ID(1-719): ");
 		scanf("%d", &keyID);
 	}while(keyID < 1 || keyID > 719);
+			
+	SplitNum(Keys[keyID], Key); /*split the six digit key into an array */
 
-	return Keys[keyID];
+	return Key;
 
 }
+
+
 
 int * SplitNum(long int Num, int * Key)
 /* Author Haydn Gynn
@@ -274,18 +275,14 @@ Functions used: None
 Purpose: Trims the string of leading and trailing spaces and returns the length
 Version: 1.0
 */{
-	char * Start, * Finish, *temp;
+	char * Start,* Finish, *temp;
 	int length;
 	temp = String;
-	Start = NULL;
-	Finish = NULL;
+	Start = String;
 
 	while(*temp != '\0'){
 		
-		if(*temp != ' ' && Start == NULL){
-			Start = temp;			
-		}
-		if(*temp != ' ' && *(temp+1) == ' '){
+		if(*temp != ' ' && (*(temp+1) == ' ' || *(temp+1) == '\0')){
 			Finish = temp + 1;
 		}
 		temp++;
@@ -360,7 +357,7 @@ Version: 1.0
 	timestamp = secs; /*Get time when function starts*/
 
 	while(1){
-		if(length >= (Maxlength+1)){ /*Add 1 to make room for end of string identifier*/
+		if(length >= (Maxlength)){
 			break;
 		}
 		
@@ -376,10 +373,13 @@ Version: 1.0
 		}else if(Input == '\b'){ /*Allow backspace to work*/
 			putchar(' ');
 			putchar('\b');
-			*String--;
+			String--;
+			*String = ' ';
+			
 			length--;
 		}else{
-			*String++ = Input;
+			*String = Input;
+			String++;
 			length++;			
 		}
 		timestamp = secs; /*Reset time stamp*/
@@ -443,7 +443,7 @@ Version: 1.0
 	while(secs-timestamp < duration){
 		
 		if(tick == 0 && tock == 0){
-			printf("\rResetting: %ld",duration - (secs-timestamp));
+			printf("\rResetting in %ld...",duration - (secs-timestamp));
 			tock = 1;
 		}
 		if(tick == 1 && tock == 1){
